@@ -52,7 +52,6 @@ def main():
         return
     
     circuit = create_dot_product_circuit(n)
-    sheep_client.new_job()
     
     available_contexts = contexts["content"]
     if "SEAL_BFV" in available_contexts:
@@ -65,14 +64,15 @@ def main():
         print("No encryption contexts available")
         return
     
-    sheep_client.set_context(context)
-    sheep_client.set_input_type("int16_t")
-    sheep_client.set_circuit_text(circuit)
-    sheep_client.set_const_inputs({"rotate_1": -1})
-    
     print("Retrieving each element from the database:\n")
     
     for i in range(n):
+        sheep_client.new_job()
+        sheep_client.set_context(context)
+        sheep_client.set_input_type("int16_t")
+        sheep_client.set_circuit_text(circuit)
+        sheep_client.set_const_inputs({"rotate_1": -1})
+        
         selection = [0] * n
         selection[i] = 1
         
@@ -104,6 +104,11 @@ def main():
             retrieved_value = int(output_values[0].split(',')[0])
         else:
             retrieved_value = int(output_values[0])
+        
+        if "cleartext check" in result_content:
+            is_correct_cleartext = result_content["cleartext check"].get("is_correct", False)
+            if not is_correct_cleartext:
+                print(f"  WARNING: Cleartext check failed - circuit may be incorrect")
         
         expected_value = database[i]
         is_correct = (retrieved_value == expected_value)
